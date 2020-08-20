@@ -1,0 +1,1099 @@
+#+TITLE: Live Rust?
+
+[[https://user-images.githubusercontent.com/202820/90717833-84345400-e27e-11ea-9d9c-981465f0f9b4.jpg]]
+
+
+* Me:
+** Zeeshan Lakhani ~ Principal Engineer @ Comcast
+*** *For one more day*
+*** PhD student at Carnegie Mellon University
+- Studying programming language theory (PLT)
+- Yes, I like types, but Rust is not about PLT!
+*** Worked on the Occam project (or how I got into Rust),
+- Built a global/local traffic manager, aka network load balancer
+- Released an open source Rust library called [[https://github.com/capsule-rs/capsule][Capsule]]
+[[https://user-images.githubusercontent.com/202820/90718081-10df1200-e27f-11ea-9353-42d2b523ee82.png]]
+*** Ask questions throughout, please!
+
+* Notes for this talk:
+** Inspiration & some examples from
+- [[https://people.mpi-sws.org/~dreyer/papers/safe-sysprog-rust/paper.pdf][Safe Systems Programming in Rust: The Promise and the Challenge]]
+- [[https://stevedonovan.github.io/rust-gentle-intro/readme.html][A Gentle Introduction to Rust]] (among other tutorials, talks, etc..)
+- [[https://www.youtube.com/watch?v=2ajos-0OWts][How Rust Views Tradeoffs by Steve Klabnik @ QCon London 2019]]
+
+* Starting out
+#+BEGIN_SRC rust hello world
+fn main() {
+    println!("Hello World!");
+}
+#+END_SRC
+
+#+BEGIN_SRC rust let/assert
+fn main() {
+    let answer = 42;
+    println!("Hello {}", answer);
+}
+#+END_SRC
+
+* Rust Transformation
+Rust Src----------------->HIR------------>MIR------------------->LLVM IR--->ASM
+
+#+BEGIN_SRC asm of above
+std::rt::lang_start:
+	subq	$56, %rsp
+	leaq	.L__unnamed_1(%rip), %rax
+	movq	%rdi, 32(%rsp)
+	movq	%rsi, 40(%rsp)
+	movq	%rdx, 48(%rsp)
+	movq	%rdi, 24(%rsp)
+	leaq	24(%rsp), %rcx
+	movq	%rcx, %rdi
+	movq	%rsi, 16(%rsp)
+	movq	%rax, %rsi
+	movq	16(%rsp), %rax
+	movq	%rdx, 8(%rsp)
+	movq	%rax, %rdx
+	movq	8(%rsp), %rcx
+	callq	*std::rt::lang_start_internal@GOTPCREL(%rip)
+	movq	%rax, (%rsp)
+	movq	(%rsp), %rax
+	addq	$56, %rsp
+	retq
+
+std::rt::lang_start::{{closure}}:
+	subq	$24, %rsp
+	movq	%rdi, 16(%rsp)
+	callq	*(%rdi)
+	callq	<() as std::process::Termination>::report
+	movl	%eax, 12(%rsp)
+	movl	12(%rsp), %eax
+	addq	$24, %rsp
+	retq
+
+std::sys::unix::process::process_common::ExitCode::as_i32:
+	pushq	%rax
+	movq	%rdi, (%rsp)
+	movzbl	(%rdi), %eax
+	popq	%rcx
+	retq
+
+core::fmt::ArgumentV1::new:
+	subq	$72, %rsp
+	movq	%rdi, 40(%rsp)
+	movq	%rsi, 48(%rsp)
+	movq	%rsi, 56(%rsp)
+	movq	56(%rsp), %rax
+	movq	%rdi, 16(%rsp)
+	movq	%rax, 8(%rsp)
+	movq	16(%rsp), %rax
+	movq	%rax, 64(%rsp)
+	movq	64(%rsp), %rcx
+	movq	%rcx, (%rsp)
+	movq	(%rsp), %rax
+	movq	%rax, 24(%rsp)
+	movq	8(%rsp), %rcx
+	movq	%rcx, 32(%rsp)
+	movq	24(%rsp), %rax
+	movq	32(%rsp), %rdx
+	addq	$72, %rsp
+	retq
+
+core::fmt::Arguments::new_v1:
+	subq	$48, %rsp
+	movq	%rdi, %rax
+	movq	%rsi, 16(%rsp)
+	movq	%rdx, 24(%rsp)
+	movq	%rcx, 32(%rsp)
+	movq	%r8, 40(%rsp)
+	movq	$0, (%rsp)
+	movq	%rsi, (%rdi)
+	movq	%rdx, 8(%rdi)
+	movq	(%rsp), %rdx
+	movq	8(%rsp), %rsi
+	movq	%rdx, 16(%rdi)
+	movq	%rsi, 24(%rdi)
+	movq	%rcx, 32(%rdi)
+	movq	%r8, 40(%rdi)
+	addq	$48, %rsp
+	retq
+
+core::ops::function::FnOnce::call_once{{vtable.shim}}:
+	subq	$24, %rsp
+	movq	%rdi, 16(%rsp)
+	movq	(%rdi), %rdi
+	callq	core::ops::function::FnOnce::call_once
+	movl	%eax, 4(%rsp)
+	movl	4(%rsp), %eax
+	addq	$24, %rsp
+	retq
+
+core::ops::function::FnOnce::call_once:
+	subq	$40, %rsp
+	movq	%rdi, 8(%rsp)
+	leaq	8(%rsp), %rdi
+	callq	std::rt::lang_start::{{closure}}
+	movl	%eax, 4(%rsp)
+	jmp	.LBB6_1
+
+.LBB6_1:
+	jmp	.LBB6_2
+
+.LBB6_2:
+	movl	4(%rsp), %eax
+	addq	$40, %rsp
+	retq
+
+.LBB6_3:
+	jmp	.LBB6_4
+
+.LBB6_4:
+	movq	24(%rsp), %rdi
+	callq	_Unwind_Resume@PLT
+	ud2
+	movq	%rax, 24(%rsp)
+	movl	%edx, 32(%rsp)
+	jmp	.LBB6_3
+
+core::ptr::drop_in_place:
+	subq	$16, %rsp
+	movq	%rdi, 8(%rsp)
+	addq	$16, %rsp
+	retq
+<() as std::process::Termination>::report:
+	subq	$24, %rsp
+	xorl	%edi, %edi
+	callq	<std::process::ExitCode as std::process::Termination>::report
+	movl	%eax, 12(%rsp)
+	movl	12(%rsp), %eax
+	addq	$24, %rsp
+	retq
+
+<std::process::ExitCode as std::process::Termination>::report:
+	pushq	%rax
+	movb	%dil, 7(%rsp)
+	leaq	7(%rsp), %rdi
+	callq	std::sys::unix::process::process_common::ExitCode::as_i32
+	movl	%eax, (%rsp)
+	movl	(%rsp), %eax
+	popq	%rcx
+	retq
+
+playground::main:
+	subq	$120, %rsp
+	movq	core::fmt::num::imp::<impl core::fmt::Display for i32>::fmt@GOTPCREL(%rip), %rsi
+	movl	$42, 36(%rsp)
+	movq	.L__unnamed_2(%rip), %rax
+	leaq	36(%rsp), %rcx
+	movq	%rcx, 104(%rsp)
+	movq	104(%rsp), %rcx
+	movq	%rcx, 112(%rsp)
+	movq	%rcx, %rdi
+	movq	%rax, 24(%rsp)
+	callq	core::fmt::ArgumentV1::new
+	movq	%rax, 16(%rsp)
+	movq	%rdx, 8(%rsp)
+	movq	16(%rsp), %rax
+	movq	%rax, 88(%rsp)
+	movq	8(%rsp), %rcx
+	movq	%rcx, 96(%rsp)
+	leaq	88(%rsp), %rdx
+	leaq	40(%rsp), %rdi
+	movq	24(%rsp), %rsi
+	movl	$2, %r8d
+	movq	%rdx, (%rsp)
+	movq	%r8, %rdx
+	movq	(%rsp), %rcx
+	movl	$1, %r8d
+	callq	core::fmt::Arguments::new_v1
+	leaq	40(%rsp), %rdi
+	callq	*std::io::stdio::_print@GOTPCREL(%rip)
+	addq	$120, %rsp
+	retq
+
+main:
+	subq	$24, %rsp
+	movb	__rustc_debug_gdb_scripts_section__(%rip), %al
+	movslq	%edi, %rcx
+	leaq	playground::main(%rip), %rdi
+	movq	%rsi, 16(%rsp)
+	movq	%rcx, %rsi
+	movq	16(%rsp), %rdx
+	movb	%al, 15(%rsp)
+	callq	std::rt::lang_start
+	addq	$24, %rsp
+	retq
+
+.L__unnamed_1:
+	.quad	core::ptr::drop_in_place
+	.quad	8
+	.quad	8
+	.quad	std::rt::lang_start::{{closure}}
+	.quad	std::rt::lang_start::{{closure}}
+	.quad	core::ops::function::FnOnce::call_once{{vtable.shim}}
+
+.L__unnamed_3:
+	.ascii	"Hello "
+
+.L__unnamed_4:
+	.byte	10
+
+.L__unnamed_5:
+	.quad	.L__unnamed_3
+	.asciz	"\006\000\000\000\000\000\000"
+	.quad	.L__unnamed_4
+	.asciz	"\001\000\000\000\000\000\000"
+
+.L__unnamed_2:
+	.quad	.L__unnamed_5
+
+__rustc_debug_gdb_scripts_section__:
+	.asciz	"\001gdb_load_rust_pretty_printers.py"
+#+END_SRC
+
+#+BEGIN_SRC rust sum
+fn iter(collection: Vec<i32>) -> f64 {
+    // a) Show: without type argument/infer
+    // b) Show: with semicolon
+    collection.iter().sum::<i32>() as f64
+}
+
+fn main() {
+    // Why won't this work?
+    let sum = 0.0;
+    for i in 0..5 {
+        sum += i as f64;
+    }
+    println!("answer: {}", sum);
+
+    // Uncomment after first ex.
+    // let a_vec = vec![10, 20];
+    // let sum2 = iter(a_vec);
+    // println!("answer: {}", sum2);
+}
+#+END_SRC
+
+* Motivational example!
+#+BEGIN_SRC c++
+std::vector<int> v {10, 11};
+int *vptr = &v[1]; // Points *into* 'v' ~ aliasing
+v.push_back(12);
+std::cout << *vptr; // Bug (use-after-free)
+// |
+// |
+// V
+#+END_SRC
+[[https://user-images.githubusercontent.com/202820/90718096-1c323d80-e27f-11ea-8ea4-e3f34c937a8d.png]]
+
+** How would Rust "fix" this?
+
+#+BEGIN_SRC rust version
+fn main() {
+    let mut v = vec![10, 11];
+    // first mutable borrow
+    let vptr = &mut v[1]; // Points *into* 'v'
+    // second mutable borrow
+    v.push(12);
+    // first borrow used!
+    println!("{}", *vptr);
+}
+#+END_SRC
+
+** The other motivation ---> PERF
+*** No garbage collection ----> no GC pauses!
+*** Statically typed & compiled!
+*** No implicit boxing!
+*** Feature-flag compilation!
+*** Example: parsing a large Json file:
+From [[https://github.com/kostya/benchmarks][kostya/benchmarks]]
+
+[[https://user-images.githubusercontent.com/202820/90718088-15a3c600-e27f-11ea-8aa6-8dc1a6690fe3.png]]
+
+* Steppin' Back
+** What kind of programmer are you?
+
+** Rust's novelty in relation to "real-programming"
+*** Rust employs the mechanisms of borrowing and lifetimes
+making it much easier to express common C++-style idioms and
+ensure that they are used safely.
+*** Rust also provides a rich set of APIs
+e.g., for concurrency abstractions, efficient data structures
+(e.g. hashmaps, btrees), and memory management.
+
+** Should YOU really use Rust?
+*** "Systems Programming" vs "Web Programming?" vs ?
+
+** Note: Rust is strongly typed, but it's NOT Functional Programming or PLT
+
+* Structs, Enums, Traits ~ more types (and subtypes)
+#+BEGIN_SRC rust structs
+#[derive(Debug)]
+struct Person {
+    // *String* is a growable, heap-allocated data
+    // structure whereas *str* is an immutable
+    // fixed-length string somewhere in memory
+    // (e.g. a slice).
+    first_name: String,
+    last_name: String,
+}
+
+impl Person {
+    fn new(first: &str, last: &str) -> Person {
+        Person {
+            first_name: first.to_string(),
+            last_name: last.to_string(),
+        }
+    }
+
+    fn full_name(&self) -> String {
+        format!("{} {}", self.first_name, self.last_name)
+    }
+
+    fn set_first(&mut self, name: &str) {
+        self.first_name = name.to_string();
+    }
+
+    fn to_tuple(self) -> (String, String) {
+        // this consumes or *moves* self
+        (self.first_name, self.last_name)
+    }
+}
+
+fn main() {
+    // static method
+    let mut p = Person::new("Arundhati", "Roy");
+
+    println!("{:?}", p);
+
+    p.set_first("Patrick");
+
+    println!("{:?}", p.full_name());
+    println!("{:?}", p.to_tuple());
+
+    // Show: borrow after a move.
+    // p.set_first("Arundhati");
+
+    let a_person = APerson {
+        p: "202020202020202020202020",
+    };
+    println!("{:?}", a_person);
+}
+
+// cannot store a reference without a lifetime.
+#[derive(Debug)]
+struct APerson {
+    // First: Why does this fail?
+    // p: &str,
+    // Then:
+    // p: &'static str, // the "Any" of Rust
+}
+#+END_SRC
+
+
+#+BEGIN_SRC rust enums
+#[derive(Debug)]
+enum Value {
+    Number(f64),
+    Str(String),
+    Bool(bool),
+}
+
+fn printer(v: Value) {
+    use Value::*;
+
+    match v {
+        Number(n) => println!("number is {}", n),
+        Str(s) => println!("string is {}", s),
+        Bool(b) => println!("boolean is {}", b),
+    }
+}
+
+fn main() {
+    let n = Value::Number(2.3);
+    let s = Value::Str("hello".to_string());
+    let b = Value::Bool(true);
+
+    printer(n);
+    printer(s);
+    printer(b);
+}
+#+END_SRC
+
+#+BEGIN_SRC rust traits, assoc types, impls
+struct Dog {
+    walked: bool,
+}
+
+struct Bear {
+    walked: bool,
+}
+
+trait Walk {
+    fn walk(&mut self);
+    fn run(&mut self);
+    fn feed(&self) -> bool {
+        true
+    }
+}
+
+impl Walk for Dog {
+    fn walk(&mut self) {
+        self.walked = true
+    }
+
+    fn run(&mut self) {
+        self.walked = false
+    }
+}
+
+impl Walk for Bear {
+    fn walk(&mut self) {
+        self.walked = true
+    }
+
+    fn run(&mut self) {
+        self.walked = false
+    }
+
+    fn feed(&self) -> bool {
+        false
+    }
+}
+
+impl Bear {
+    fn inc_bears_seen() -> impl Fn(i32) -> i32 {
+        |b| b + 1
+    }
+}
+
+fn walk_pet<W: Walk>(pet: &mut W) {
+    pet.walk();
+
+    // will fail b/c of bounds check
+    // pet.walked = true
+}
+
+// Trait Object
+fn run_pet(pet: &mut dyn Walk) {
+    pet.run()
+}
+
+fn main() {
+    let mut rover = Dog { walked: false };
+    rover.walk();
+
+    let mut yogi = Bear { walked: false };
+    walk_pet(&mut yogi);
+
+    assert_eq!(rover.walked, true);
+    assert_eq!(rover.feed(), true);
+
+    assert_eq!(yogi.walked, true);
+    assert_eq!(yogi.feed(), false);
+
+    assert_eq!(Bear::inc_bears_seen()(3), 4);
+
+    // trait object in action
+    run_pet(&mut rover);
+    assert_eq!(rover.walked, false);
+
+    // static dispatch in action
+    assert_eq!(rover.have_seen(), true);
+}
+
+// SHOW: Static Dispatch and Supertraits
+struct Lion {
+    played: bool,
+}
+
+trait Animal<T> {
+    fn have_seen(&self) -> bool {
+        false
+    }
+}
+
+trait Play<T>: Animal<T> {
+    fn play(&mut self);
+}
+
+// Uncomment to fix error
+// impl<T> Animal<T> for Lion {
+//     fn have_seen(&self) -> bool {
+//         true
+//     }
+// }
+
+impl Animal<Lion> for Bear {
+    fn have_seen(&self) -> bool {
+        false
+    }
+}
+
+impl Animal<Lion> for Dog {
+    fn have_seen(&self) -> bool {
+        true
+    }
+}
+
+impl<T> Play<T> for Lion {
+    fn play(&mut self) {
+        self.played = true
+    }
+}
+#+END_SRC
+
+#+BEGIN_SRC rust Result/Error
+use std::fmt;
+
+type Result<T> = std::result::Result<T, DoubleError>;
+
+#[derive(Debug, Clone)]
+struct DoubleError;
+
+impl fmt::Display for DoubleError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "invalid first item to double")
+    }
+}
+
+fn double_first(vec: Vec<&str>) -> Result<i32> {
+    vec.first()
+        .ok_or(DoubleError)
+        .and_then(|s| s.parse::<i32>().map_err(|_| DoubleError).map(|i| 2 * i))
+}
+
+fn print(result: Result<i32>) {
+    match result {
+        Ok(n) => println!("The first doubled is {}", n),
+        Err(e) => println!("Error: {}", e),
+    }
+}
+
+fn main() {
+    let numbers = vec!["42", "93", "18"];
+    let empty = vec![];
+    let strings = vec!["tofu", "93", "18"];
+
+    print(double_first(numbers));
+    print(double_first(empty));
+    print(double_first(strings));
+}
+#+END_SRC
+
+* The Heap & the Stack
+** All values in Rust are allocated on the Stack by default, except:
+*** When size is unknown, e.g. String, or dynamic values
+*** When using Box
+
+* Memory-Safety
+** Ownership & Borrowing
+
+#+BEGIN_SRC rust - review
+fn main() {
+    // static method
+    let mut p = Person::new("Arundhati", "Roy");
+
+    println!("{:?}", p);
+
+    p.set_first("Patrick");
+
+    println!("{:?}", p.full_name());
+    println!("{:?}", p.to_tuple());
+
+    // Show: borrow after a move.
+    // p.set_first("Arundhati");
+
+    let a_person = APerson {
+        p: "202020202020202020202020",
+    };
+    println!("{:?}", a_person);
+}
+
+// cannot store a reference without a lifetime.
+#[derive(Debug)]
+struct APerson {
+    // First: Why does this fail?
+    // p: &str,
+    // Then:
+    // p: &'static str, // the "Any" of Rust
+}
+#+END_SRC
+
+** Lifetimes & Scope
+
+#+BEGIN_SRC rust multiple lifetimes
+fn function<'a, 'b>(x: &'a mut i32, y: &'b i32) -> &'a i32 {
+    *x = 10;
+    let sum = *x + y;
+    *x = sum;
+    // this breaks -> why?
+    y
+}
+
+fn main() {
+    let mut x = 4;
+    let y = 5;
+    println!("{}", function(&mut x, &y));
+}
+#+END_SRC
+
+#+BEGIN_SRC rust - dangling refernce
+fn main() {
+    let r;
+
+    {
+        let x = 5;
+        r = &x;
+    }
+
+    println!("r: {}", r);
+}
+#+END_SRC
+
+#+BEGIN_SRC rust - lifetime inference
+fn main() {
+ {
+        let r;                // ---------+-- 'a
+                              //          |
+        {                     //          |
+            let x = 5;        // -+-- 'b  |
+            r = &x;           //  |       |
+        }                     // -+       |
+                              //          |
+        println!("r: {}", r); //          |
+    }                         // ---------+
+}
+#+END_SRC
+
+* Thread-Safety
+
+** Core idea: prevent data-races!
+
+#+BEGIN_SRC rust Threads Don't Borrow
+use std::sync::Arc;
+use std::thread;
+
+struct MyString(String);
+
+impl MyString {
+    fn new(s: &str) -> MyString {
+        MyString(s.to_string())
+    }
+}
+
+fn borrow_err() {
+    let name = "dolly".to_string();
+    let t = thread::spawn(|| {
+        println!("hello {}", name);
+    });
+
+    println!("wait {:?}", t.join());
+}
+
+/* For threads, you need std::sync::Arc - 'Arc' stands for 'Atomic Reference
+   Counting'. That is, it guarantees that the reference count will be modified
+   in one logical operation. To make this guarantee, it must ensure that the
+   operation is locked so that only the current thread has access.
+,*/
+// fn arc() {
+//     let mut threads = Vec::new();
+//     let name = Arc::new(MyString::new("dolly"));
+
+//     for i in 0..5 {
+//         let tname = name.clone();
+//         let t = thread::spawn(move || {
+//             println!("hello {} count {}", tname.0, i);
+//         });
+//         threads.push(t);
+//     }
+
+//     for t in threads {
+//         t.join().expect("thread failed");
+//     }
+// }
+
+fn main() {
+    borrow_err();
+    // arc();
+}
+#+END_SRC
+
+** For dealing with shared stated and synchronization, there's
+*** Mutexes,
+*** RwLock
+*** Barriers
+*** Once (one-time global initialization)
+*** ...etc
+
+* *Safe* Abstractions
+#+BEGIN_SRC rust pcap unsafe
+/// Packet Capture (`pcap`) writer/dumper for packets
+struct Pcap {
+    path: String,
+    handle: NonNull<ffi::pcap_t>,
+    dumper: NonNull<ffi::pcap_dumper_t>,
+}
+
+impl Pcap {
+    /// Creates a file for dumping packets into from a given file path.
+    fn create(path: &str) -> Fallible<Pcap> {
+        unsafe {
+            let handle = ffi::pcap_open_dead(DLT_EN10MB, PCAP_SNAPSHOT_LEN)
+                .to_result(|_|
+                           PcapError::new(
+                               "Cannot create packet capture handle."))?;
+            let dumper =
+                ffi::pcap_dump_open(handle.as_ptr(),
+                                    path.to_cstring().as_ptr())
+                .to_result(|_| PcapError::get_error(handle))
+                .or_else(|err| {
+                    ffi::pcap_close(handle.as_ptr());
+                    Err(err)
+                })?;
+
+            debug!("PCAP file {} created", path);
+
+            Ok(Pcap {
+                path: path.to_string(),
+                handle,
+                dumper,
+            })
+        }
+    }
+#+END_SRC
+
+#+BEGIN_SRC rust pcap safe abstraction
+#[cfg(feature = "pcap-dump")]
+{
+    pcap::capture_queue(
+        self.port_id,
+        self.name.as_str(),
+        core_id,
+        RxTxQueue::Rx(rxq),
+    )?;
+
+    pcap::capture_queue(
+        self.port_id,
+        self.name.as_str(),
+        core_id,
+        RxTxQueue::Tx(txq),
+    )?;
+}
+#+END_SRC
+
+* Macros!
+** Syntactic/Declarative macros
+#+BEGIN_SRC rust scheme!
+macro_rules! prefix_add {
+    ((+ $e:expr)) => { $e };
+    ((+ $e:tt $($es:tt)*)) => {{
+      $e + prefix_add!{(+ $($es)*)}
+    }};
+}
+
+fn main() {
+    let a = prefix_add! {(+ 10 20 30 40)};
+    println!("{:?}", a);
+    assert_eq!(100, a);
+}
+#+END_SRC
+
+** Procedural macros
+
+[[https://user-images.githubusercontent.com/202820/90718066-09b80400-e27f-11ea-98a6-24c5b8f3598d.png]]
+
+* A example-tour of Rust
+** Leetcodin'
+#+BEGIN_SRC rust - find minimum depth of binary tree
+// Given a binary tree, find its minimum depth.
+// The minimum depth is the number of nodes along the shortest path from the
+// root node down to the nearest leaf node.
+//
+// Note: A leaf is a node with no children.
+//
+// Example:
+// Given binary tree [3,9,20,null,null,15,7],
+//
+//     3
+//    / \
+//   9  20
+//     /  \
+//    15   7
+//
+// return its minimum depth = 2.
+#[derive(Debug, PartialEq, Eq)]
+pub struct TreeNode {
+    pub val: i32,
+    pub left: Option<Box<TreeNode>>,
+    pub right: Option<Box<TreeNode>>,
+}
+
+impl TreeNode {
+    #[inline]
+    pub fn new(val: i32) -> Self {
+        TreeNode {
+            val,
+            left: None,
+            right: None,
+        }
+    }
+}
+
+pub struct Solution;
+
+impl Solution {
+    pub fn min_depth(root: Option<Box<TreeNode>>) -> i32 {
+        use std::collections::VecDeque;
+
+        // Breadth-first search
+        let mut deq: VecDeque<(i32, Option<Box<TreeNode>>)> = VecDeque::new();
+
+        if let Some(node) = root {
+            deq.push_back((1, Some(node)))
+        } else {
+            return 0;
+        }
+
+        while !deq.is_empty() {
+            if let Some((level, Some(node))) = deq.pop_front() {
+                if node.left.is_none() && node.right.is_none() {
+                    return level;
+                }
+                deq.push_back((level + 1, node.left));
+                deq.push_back((level + 1, node.right));
+            }
+        }
+        0
+    }
+}
+
+fn main() {
+    let root = Some(Box::new(TreeNode {
+        val: 3,
+        left: Some(Box::new(TreeNode::new(9))),
+        right: Some(Box::new(TreeNode {
+            val: 20,
+            left: Some(Box::new(TreeNode::new(15))),
+            right: Some(Box::new(TreeNode::new(7))),
+        })),
+    }));
+    assert_eq!(2, Solution::min_depth(root));
+}
+
+#[test]
+fn a_test() {
+    let root = Some(Box::new(TreeNode {
+        val: 3,
+        left: Some(Box::new(TreeNode::new(9))),
+        right: Some(Box::new(TreeNode {
+            val: 20,
+            left: Some(Box::new(TreeNode::new(15))),
+            right: Some(Box::new(TreeNode::new(7))),
+        })),
+    }));
+    assert_eq!(3, Solution::min_depth(root));
+}
+#+END_SRC
+
+** Implement your own iterator
+
+#+BEGIN_SRC rust iterator
+use std::net::Ipv6Addr;
+use std::str::FromStr;
+
+const IPV6ADDR_BITS: usize = 128;
+
+/// [CIDR] range for IPv6 addresses.
+///
+/// [CIDR]: https://tools.ietf.org/html/rfc4291#section-2.3
+#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Ipv6Cidr {
+    address: Ipv6Addr,
+    mask: u128,
+}
+
+impl Ipv6Cidr {
+    #[inline]
+    fn network(&self) -> Ipv6Addr {
+        Ipv6Addr::from(self.mask & u128::from(self.address))
+    }
+
+    #[inline]
+    fn size(&self) -> usize {
+        2usize.pow((IPV6ADDR_BITS - self.length()) as u32)
+    }
+
+    #[inline]
+    fn length(&self) -> usize {
+        (!self.mask).leading_zeros() as usize
+    }
+
+    #[inline]
+    fn new(address: Ipv6Addr, length: usize) -> Result<Self, &'static str> {
+        let mask = match length {
+            0 => u128::max_value(),
+            1..=IPV6ADDR_BITS => u128::max_value() << (IPV6ADDR_BITS - length),
+            _ => return Err("bad"),
+        };
+
+        Ok(Ipv6Cidr { address, mask })
+    }
+
+    /// Iterate through CIDR range addresses.
+    pub fn iter(self) -> Ipv6CidrIterator {
+        Ipv6CidrIterator::new(self.network(), self.size())
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct Ipv6CidrIterator {
+    next: Option<u128>,
+    end: u128,
+}
+
+impl Ipv6CidrIterator {
+    fn new(start: Ipv6Addr, end: usize) -> Self {
+        let start = u128::from(start);
+        Ipv6CidrIterator {
+            next: Some(start),
+            end: start + (end as u128 - 1),
+        }
+    }
+}
+
+impl Iterator for Ipv6CidrIterator {
+    type Item = Ipv6Addr;
+
+    fn next(&mut self) -> Option<Ipv6Addr> {
+        let next = self.next?;
+        self.next = if next == self.end {
+            None
+        } else {
+            Some(next + 1)
+        };
+        Some(next.into())
+    }
+}
+
+fn main() {
+    let cidr = Ipv6Cidr::new(Ipv6Addr::from_str("20f6:1b85:cc34::").unwrap(), 126).unwrap();
+    let iter = cidr.iter();
+    assert_eq!(cidr.size(), 4);
+    assert_eq!(
+        Ipv6Addr::from_str("20f6:1b85:cc34::3").unwrap(),
+        iter.last().unwrap()
+    );
+}
+#+END_SRC
+
+** Async/Await ~ a web service
+#+BEGIN_SRC rust :crates '((serde_json . 1.0) (serde . 1.0) (reqwest . 0.1) (tokio . 0.2))
+// async/await w/ tokio/request
+
+// Go to Project
+
+use reqwest::{self, Error};
+use serde::Deserialize;
+
+#[derive(Debug, Deserialize)]
+struct Repo {
+    #[serde(rename = "stargazers_count")]
+    pub stars: u64,
+}
+
+#[tokio::main]
+async fn main() -> Result<(), Error> {
+    let request_url = format!(
+        "https://api.github.com/repos/{owner}/{repo}",
+        owner = "capsule-rs",
+        repo = "capsule"
+    );
+    println!("{}", request_url);
+    let client = reqwest::Client::new();
+    let repo = client
+        .get(request_url.as_str())
+        .header(
+            reqwest::header::USER_AGENT,
+            reqwest::header::HeaderValue::from_static(env!("CARGO_PKG_NAME")),
+        )
+        .send()
+        .await?
+        .json::<Repo>()
+        .await?;
+
+    println!("{:?}", repo.stars);
+    Ok(())
+}
+#+END_SRC
+
+** Compilation targets ~ WASM
+
+#+BEGIN_SRC rust
+// Go to Project
+
+fn fib(x: u32) -> u32 {
+    if x < 2 {
+        1
+    } else {
+        fib(x - 1) + fib(x - 2)
+    }
+}
+
+fn main() {
+    println!("{}", fib(40));
+}
+#+END_SRC
+
+* Where Does Rust fit-in @ Comcast?
+** Automating server maintenance across DCs ~ [[https://github.com/Comcast/Bynar][Bynar]]
+** SDS / Storage Metrics
+** !Capsule / Occam Gateway!
+*** Let's talk about this!
+
+* How/Where is Rust being used "in the real world"?
+** "Serverless"
+*** Cloudflare Workers
+*** AWS Firecracker & S3 (pieces)
+** Automation
+*** Habitat from Chef
+** More companies using Rust
+*** Dropbox
+*** Yelp
+*** 1Password
+*** PingCAP / TiKV (k/v database)
+
+* Tradeoffs
+** Compilation can be sssslllllllllooooooooooooooowwwwwwww
+*Choice*: speed of final binaries > compile times
+** The learning curve is REAL
+*** "Fighting the borrow checker"
+*** Inference doesn't always "just happen"
+** System threads vs Green threads
+*Choice*: want your own threading model?
+Implement it as part of your own runtime.
+
+* The promise(s) & challenge(s) of a language like Rust
+** Promise: a safe systems programming language with "control"
+- Multiple projects looking at investigating Rust's safety claims,
+  e.g. [[https://plv.mpi-sws.org/rustbelt/][RustBelt]], [[https://iris-project.org/][Iris]], and [[https://arxiv.org/abs/1903.00982][Oxide]]
+** Promise: A helpful compiler, with GOOD error messages
+
+** Challenge: safety guarantees can be side-stepped
+- unsafe code ~ all bets are off
+- interior mutability (e.g RefCell) pushes borrow
+  checks to the runtime
+** Challenge: complexity, community, and ease of use
+- No REPL
+- No BDL? (e.g. multiple, plausible logging libraries)
+- Adoption?
+
+* Where can I learn more about Rust?
+- [[https://doc.rust-lang.org/book/][The Rust Programming Language]]
+- [[https://doc.rust-lang.org/rust-by-example/][Rust by Example]]
+- [[https://readrust.net/][Read Rust]]
+- [[https://github.com/rust-lang/rfcs][rust-lang/rfcs]]
+- [[https://github.com/rust-unofficial/awesome-rust][awesome-rust]]
+- [[https://github.com/rust-lang/rustlings][rustlings - small exercises in Rust]]
+- [[https://exercism.io/tracks/rust/exercises][exercism.io Rust track]]
+- [[https://gitlab.redox-os.org/redox-os/redox][Redox - an OS written in Rust]]
+- [[https://www.youtube.com/playlist?list=PLqbS7AVVErFiWDOAVrPt7aYmnuuOLYvOa][Crust of Rust]]
+- [[https://amethyst.rs/][Amethyst ~ a game engine in Rust]]

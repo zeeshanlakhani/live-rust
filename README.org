@@ -4,12 +4,11 @@
 
 
 * Me:
-** Zeeshan Lakhani ~ Principal Engineer @ Comcast
-*** *For one more day*
+** Zeeshan Lakhani ~ Principal Engineer/Architect @ BlockFi
 *** PhD student at Carnegie Mellon University
 - Studying programming language theory (PLT)
 - Yes, I like types, but Rust is not about PLT!
-*** Worked on the Occam project (or how I got into Rust),
+*** How I got into Rust?
 - Built a global/local traffic manager, aka network load balancer
 - Released an open source Rust library called [[https://github.com/capsule-rs/capsule][Capsule]]
 [[https://user-images.githubusercontent.com/202820/90718081-10df1200-e27f-11ea-9353-42d2b523ee82.png]]
@@ -20,6 +19,7 @@
 - [[https://people.mpi-sws.org/~dreyer/papers/safe-sysprog-rust/paper.pdf][Safe Systems Programming in Rust: The Promise and the Challenge]]
 - [[https://stevedonovan.github.io/rust-gentle-intro/readme.html][A Gentle Introduction to Rust]] (among other tutorials, talks, etc..)
 - [[https://www.youtube.com/watch?v=2ajos-0OWts][How Rust Views Tradeoffs by Steve Klabnik @ QCon London 2019]]
+- [[https://jonathansteyfkens.com/posts/explore-rust.html][Exploring Rust]]
 
 * Starting out
 #+BEGIN_SRC rust hello world
@@ -37,6 +37,9 @@ fn main() {
 
 * Rust Transformation
 Rust Src----------------->HIR------------>MIR------------------->LLVM IR--->ASM
+
+[[./img/ir.png]]
+
 
 #+BEGIN_SRC asm of above
 std::rt::lang_start:
@@ -260,7 +263,8 @@ fn iter(collection: Vec<i32>) -> f64 {
 fn main() {
     // Why won't this work?
     let sum = 0.0;
-    for i in 0..5 {
+    // inclusive range
+    for i in 0..=5 {
         sum += i as f64;
     }
     println!("answer: {}", sum);
@@ -372,10 +376,10 @@ fn main() {
     // Show: borrow after a move.
     // p.set_first("Arundhati");
 
-    let a_person = APerson {
-        p: "202020202020202020202020",
-    };
-    println!("{:?}", a_person);
+    // let a_person = APerson {
+    //     p: "202020202020202020202020",
+    // };
+    // println!("{:?}", a_person);
 }
 
 // cannot store a reference without a lifetime.
@@ -387,7 +391,6 @@ struct APerson {
     // p: &'static str, // the "Any" of Rust
 }
 #+END_SRC
-
 
 #+BEGIN_SRC rust enums
 #[derive(Debug)]
@@ -497,23 +500,23 @@ fn main() {
     assert_eq!(rover.walked, false);
 
     // static dispatch in action
-    assert_eq!(rover.have_seen(), true);
+    // assert_eq!(rover.have_seen(), true);
 }
 
 // SHOW: Static Dispatch and Supertraits
-struct Lion {
-    played: bool,
-}
+// struct Lion {
+//     played: bool,
+// }
 
-trait Animal<T> {
-    fn have_seen(&self) -> bool {
-        false
-    }
-}
+// trait Animal<T> {
+//     fn have_seen(&self) -> bool {
+//         false
+//     }
+// }
 
-trait Play<T>: Animal<T> {
-    fn play(&mut self);
-}
+// trait Play<T>: Animal<T> {
+//     fn play(&mut self);
+// }
 
 // Uncomment to fix error
 // impl<T> Animal<T> for Lion {
@@ -522,23 +525,23 @@ trait Play<T>: Animal<T> {
 //     }
 // }
 
-impl Animal<Lion> for Bear {
-    fn have_seen(&self) -> bool {
-        false
-    }
-}
+// impl Animal<Lion> for Bear {
+//     fn have_seen(&self) -> bool {
+//         false
+//     }
+// }
 
-impl Animal<Lion> for Dog {
-    fn have_seen(&self) -> bool {
-        true
-    }
-}
+// impl Animal<Lion> for Dog {
+//     fn have_seen(&self) -> bool {
+//         true
+//     }
+// }
 
-impl<T> Play<T> for Lion {
-    fn play(&mut self) {
-        self.played = true
-    }
-}
+// impl<T> Play<T> for Lion {
+//     fn play(&mut self) {
+//         self.played = true
+//     }
+// }
 #+END_SRC
 
 #+BEGIN_SRC rust Result/Error
@@ -1043,11 +1046,11 @@ fn main() {
 }
 #+END_SRC
 
-* Where Does Rust fit-in @ Comcast?
-** Automating server maintenance across DCs ~ [[https://github.com/Comcast/Bynar][Bynar]]
-** SDS / Storage Metrics
+* Where Does Rust fit-in @ ?
 ** !Capsule / Occam Gateway!
-*** Let's talk about this!
+ - Let's talk about this!
+** Tell me?
+
 
 * How/Where is Rust being used "in the real world"?
 ** "Serverless"

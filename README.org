@@ -3,6 +3,9 @@
 [[https://user-images.githubusercontent.com/202820/90717833-84345400-e27e-11ea-9d9c-981465f0f9b4.jpg]]
 
 
+
+
+
 * Me:
 ** Zeeshan Lakhani ~ Principal Engineer/Architect @ BlockFi
 *** PhD student at Carnegie Mellon University
@@ -14,12 +17,37 @@
 [[https://user-images.githubusercontent.com/202820/90718081-10df1200-e27f-11ea-9353-42d2b523ee82.png]]
 *** Ask questions throughout, please!
 
+
+
+
+
+
+
+
+
+
+
+
 * Notes for this talk:
 ** Inspiration & some examples from
 - [[https://people.mpi-sws.org/~dreyer/papers/safe-sysprog-rust/paper.pdf][Safe Systems Programming in Rust: The Promise and the Challenge]]
 - [[https://stevedonovan.github.io/rust-gentle-intro/readme.html][A Gentle Introduction to Rust]] (among other tutorials, talks, etc..)
 - [[https://www.youtube.com/watch?v=2ajos-0OWts][How Rust Views Tradeoffs by Steve Klabnik @ QCon London 2019]]
 - [[https://jonathansteyfkens.com/posts/explore-rust.html][Exploring Rust]]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 * Starting out
 #+BEGIN_SRC rust hello world
@@ -35,10 +63,26 @@ fn main() {
 }
 #+END_SRC
 
+
+
+
+
+
+
+
+
+
+
+
+
 * Rust Transformation
 Rust Src----------------->HIR------------>MIR------------------->LLVM IR--->ASM
 
 [[./img/ir.png]]
+
+
+
+
 
 
 #+BEGIN_SRC asm of above
@@ -253,6 +297,22 @@ __rustc_debug_gdb_scripts_section__:
 	.asciz	"\001gdb_load_rust_pretty_printers.py"
 #+END_SRC
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #+BEGIN_SRC rust sum
 fn iter(collection: Vec<i32>) -> f64 {
     // a) Show: without type argument/infer
@@ -276,6 +336,18 @@ fn main() {
 }
 #+END_SRC
 
+
+
+
+
+
+
+
+
+
+
+
+
 * Motivational example!
 #+BEGIN_SRC c++
 std::vector<int> v {10, 11};
@@ -287,6 +359,16 @@ std::cout << *vptr; // Bug (use-after-free)
 // V
 #+END_SRC
 [[https://user-images.githubusercontent.com/202820/90718096-1c323d80-e27f-11ea-8ea4-e3f34c937a8d.png]]
+
+
+
+
+
+
+
+
+
+
 
 ** How would Rust "fix" this?
 
@@ -302,6 +384,23 @@ fn main() {
 }
 #+END_SRC
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ** The other motivation ---> PERF
 *** No garbage collection ----> no GC pauses!
 *** Statically typed & compiled!
@@ -311,6 +410,10 @@ fn main() {
 From [[https://github.com/kostya/benchmarks][kostya/benchmarks]]
 
 [[https://user-images.githubusercontent.com/202820/90718088-15a3c600-e27f-11ea-8aa6-8dc1a6690fe3.png]]
+
+
+
+
 
 * Steppin' Back
 ** What kind of programmer are you?
@@ -327,6 +430,19 @@ e.g., for concurrency abstractions, efficient data structures
 *** "Systems Programming" vs "Web Programming?" vs ?
 
 ** Note: Rust is strongly typed, but it's NOT Functional Programming or PLT
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 * Structs, Enums, Traits ~ more types (and subtypes)
 #+BEGIN_SRC rust structs
@@ -392,6 +508,16 @@ struct APerson {
 }
 #+END_SRC
 
+
+
+
+
+
+
+
+
+
+
 #+BEGIN_SRC rust enums
 #[derive(Debug)]
 enum Value {
@@ -420,6 +546,24 @@ fn main() {
     printer(b);
 }
 #+END_SRC
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #+BEGIN_SRC rust traits, assoc types, impls
 struct Dog {
@@ -544,6 +688,11 @@ fn main() {
 // }
 #+END_SRC
 
+
+
+
+
+
 #+BEGIN_SRC rust Result/Error
 use std::fmt;
 
@@ -582,10 +731,22 @@ fn main() {
 }
 #+END_SRC
 
+
+
+
+
+
+
+
+
+
+
+
 * The Heap & the Stack
 ** All values in Rust are allocated on the Stack by default, except:
 *** When size is unknown, e.g. String, or dynamic values
 *** When using Box
+
 
 * Memory-Safety
 ** Ownership & Borrowing
@@ -667,6 +828,17 @@ fn main() {
 }
 #+END_SRC
 
+
+
+
+
+
+
+
+
+
+
+
 * Thread-Safety
 
 ** Core idea: prevent data-races!
@@ -720,12 +892,35 @@ fn main() {
 }
 #+END_SRC
 
+
+
+
 ** For dealing with shared stated and synchronization, there's
 *** Mutexes,
 *** RwLock
 *** Barriers
 *** Once (one-time global initialization)
 *** ...etc
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 * *Safe* Abstractions
 #+BEGIN_SRC rust pcap unsafe
@@ -803,6 +998,20 @@ fn main() {
 ** Procedural macros
 
 [[https://user-images.githubusercontent.com/202820/90718066-09b80400-e27f-11ea-98a6-24c5b8f3598d.png]]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 * A example-tour of Rust
 ** Leetcodin'
@@ -897,6 +1106,12 @@ fn a_test() {
 }
 #+END_SRC
 
+
+
+
+
+
+
 ** Implement your own iterator
 
 #+BEGIN_SRC rust iterator
@@ -988,6 +1203,19 @@ fn main() {
 }
 #+END_SRC
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ** Async/Await ~ a web service
 #+BEGIN_SRC rust :crates '((serde_json . 1.0) (serde . 1.0) (reqwest . 0.1) (tokio . 0.2))
 // async/await w/ tokio/request
@@ -1028,6 +1256,8 @@ async fn main() -> Result<(), Error> {
 }
 #+END_SRC
 
+
+
 ** Compilation targets ~ WASM
 
 #+BEGIN_SRC rust
@@ -1045,6 +1275,14 @@ fn main() {
     println!("{}", fib(40));
 }
 #+END_SRC
+
+
+
+
+
+
+
+
 
 * Where Does Rust fit-in @ ?
 ** !Capsule / Occam Gateway!
@@ -1073,6 +1311,11 @@ fn main() {
 ** System threads vs Green threads
 *Choice*: want your own threading model?
 Implement it as part of your own runtime.
+
+
+
+
+
 
 * The promise(s) & challenge(s) of a language like Rust
 ** Promise: a safe systems programming language with "control"
